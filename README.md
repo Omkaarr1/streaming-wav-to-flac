@@ -5,7 +5,7 @@ This project is a web-based application that allows users to stream live audio f
 Accessing the Application
 You can access the application through the following link:
 
-(Real-Time WAV to FLAC Streaming Service)[https://ec2-54-172-120-16.compute-1.amazonaws.com/static/]
+[Real-Time WAV to FLAC Streaming Service](https://ec2-54-172-120-16.compute-1.amazonaws.com/static/)
 Note: Since this service uses a self-signed SSL certificate, your browser will likely warn you that the connection is not secure. To proceed, click on Advanced and choose Proceed to [hostname] (unsafe).
 
 ## Features
