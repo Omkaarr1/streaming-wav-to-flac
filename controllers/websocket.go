@@ -8,6 +8,7 @@ import (
     "net/http"
 )
 
+// WebSocket upgrader to establish WebSocket connections
 var upgrader = websocket.Upgrader{
     ReadBufferSize:  1024,
     WriteBufferSize: 1024,
@@ -16,6 +17,7 @@ var upgrader = websocket.Upgrader{
     },
 }
 
+// HandleWebSocket processes WAV to FLAC conversion in real-time
 func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
     conn, err := upgrader.Upgrade(w, r, nil)
     if err != nil {
@@ -29,9 +31,9 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
     }()
 
     // Start ffmpeg command to convert WAV to FLAC in real-time
-    ffmpegCmd := exec.Command("ffmpeg", "-f", "wav", "-i", "pipe:0", "-c:a", "libopus", "-b:a", "128k", "-f", "webm", "pipe:1")
+    ffmpegCmd := exec.Command("ffmpeg", "-f", "webm", "-i", "pipe:0", "-c:a", "flac", "-f", "flac", "pipe:1")
 
-	// Get stdin and stdout pipes
+    // Get stdin and stdout pipes
     ffmpegStdin, err := ffmpegCmd.StdinPipe()
     if err != nil {
         log.Println("Failed to get stdin pipe:", err)
@@ -43,6 +45,7 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    // Start the ffmpeg process
     if err := ffmpegCmd.Start(); err != nil {
         log.Println("Failed to start ffmpeg:", err)
         return
@@ -51,42 +54,45 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
     // Goroutine to read WAV data from WebSocket and pipe to ffmpeg
     go func() {
         for {
+            // Read WAV data from WebSocket
             _, wavData, err := conn.ReadMessage()
             if err != nil {
                 log.Println("Error reading from WebSocket:", err)
                 break
             }
 
-            // log.Println("Received WAV data chunk, writing to ffmpeg...")
+            // Write WAV data to ffmpeg stdin
             if _, err := ffmpegStdin.Write(wavData); err != nil {
                 log.Println("Error writing to ffmpeg stdin:", err)
                 break
             }
         }
 
+        // Close ffmpeg stdin to indicate no more data
         ffmpegStdin.Close()
     }()
 
     // Stream FLAC data from ffmpeg stdout to WebSocket
     buf := make([]byte, 1024)
     for {
+        // Read FLAC data from ffmpeg stdout
         n, err := ffmpegStdout.Read(buf)
         if err != nil {
             if err == io.EOF {
-                log.Println("ffmpeg finished processing.")
                 break
             }
             log.Println("Error reading from ffmpeg stdout:", err)
             break
         }
 
-        log.Println("Sending FLAC data chunk to client.")
+        // Send FLAC data back to WebSocket client
         if err := conn.WriteMessage(websocket.BinaryMessage, buf[:n]); err != nil {
             log.Println("Error writing to WebSocket:", err)
             break
         }
     }
 
+    // Wait for ffmpeg to finish
     if err := ffmpegCmd.Wait(); err != nil {
         log.Println("ffmpeg process exited with error:", err)
     }

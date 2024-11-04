@@ -1,34 +1,21 @@
-# WAV to FLAC Converter
+# Real-Time WAV to FLAC Streaming Service
 
-This project is a web-based application that allows users to upload WAV audio files and convert them to FLAC format. The application is built using a Go backend for file handling and conversion, and a simple HTML/CSS/JavaScript frontend for user interaction. Once the file is converted, users can download the FLAC file directly to their device.
-
-## Table of Contents
-
-- [Features](#features)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Project Structure](#project-structure)
-- [API Endpoints](#api-endpoints)
-- [Frontend UI](#frontend-ui)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [License](#license)
+This project is a web-based application that allows users to stream live audio from their microphone in WAV format and receive a real-time conversion to FLAC. The server, built in Go, uses WebSockets to handle real-time audio streaming and `ffmpeg` for on-the-fly conversion. The client application is built with HTML, CSS, and JavaScript to support live streaming, buffering, and playback of converted FLAC data.
 
 ## Features
 
-- **File Upload**: Users can upload WAV files directly from their device.
-- **Real-time Conversion**: The backend converts WAV files to FLAC format in real-time using `ffmpeg`.
-- **Downloadable FLAC File**: After conversion, users can download the FLAC file.
-- **User-friendly Interface**: A simple and clean UI for easy file selection and conversion.
+- **Real-Time Audio Streaming**: Users can stream audio from their microphone in WAV format.
+- **On-the-Fly FLAC Conversion**: The backend server converts WAV audio to FLAC in real-time.
+- **WebSocket Communication**: Uses WebSocket for continuous two-way communication, allowing real-time streaming of converted FLAC data back to the client.
+- **Buffered Playback**: Ensures the complete audio is processed and streamed, including any final data chunks.
 
 ## Requirements
 
 To run this project, ensure you have the following installed:
 
-- **Go** (version 1.16 or newer): Go is used for the backend API.
+- **Go** (1.16 or newer): Go is used for the backend API.
 - **ffmpeg**: A powerful tool to handle audio and video processing. Make sure it's installed and accessible from the command line.
-- **Browser**: A modern browser (e.g., Chrome, Firefox) to run the frontend.
+- **Modern Browser**: A modern browser (e.g., Chrome, Firefox) that supports `MediaRecorder` with WebM and Opus codecs.
 
 ## Installation
 
@@ -69,11 +56,13 @@ To run this project, ensure you have the following installed:
 1. **Open the Application**:
    In your browser, go to `http://localhost:8080/static/index.html`.
 
-2. **Upload a WAV File**:
-   Click the "Choose WAV File" button to select a WAV file from your device.
+2. **Start Streaming**:
+   - Click the **Start Streaming** button to begin capturing audio from your microphone and sending it to the server.
+   - The backend server will convert the streamed audio to FLAC in real-time.
 
-3. **Convert and Download**:
-   Click the "Convert and Download" button to start the conversion. Once complete, the FLAC file will automatically download to your device.
+3. **Stop Streaming**:
+   - Click **Stop Streaming** to end the session.
+   - The application will then combine all received FLAC data and play it back as a single audio file.
 
 ## Project Structure
 
@@ -81,12 +70,11 @@ The project is structured as follows:
 
 ```
 wav-to-flac-conversion/
-├── controllers/           # Contains the controller logic for handling file uploads and WebSocket connections
-│   ├── upload.go          # Handles WAV file upload, conversion, and download link generation
-│   └── websocket.go       # (If applicable) Handles WebSocket connections (not used in final version)
+├── controllers/           # Contains the controller logic for handling WebSocket connections and real-time audio processing
+│   └── websocket.go       # Manages WebSocket audio streaming and conversion from WAV to FLAC
 ├── static/                # Static files for the frontend
-│   └── index.html         # HTML file with JavaScript for file upload and download
-├── temp/                  # Temporary directory to store uploaded WAV files and converted FLAC files
+│   └── index.html         # HTML file with JavaScript for audio capture, streaming, and playback
+├── temp/                  # Temporary directory to store any intermediary files if needed
 ├── main.go                # Entry point for the Go application, setting up routes and server configuration
 ├── go.mod                 # Go module file
 └── README.md              # Project documentation
@@ -94,62 +82,37 @@ wav-to-flac-conversion/
 
 ### Explanation of Key Files
 
-- **main.go**: Initializes the HTTP server, sets up API endpoints, and serves static files.
-- **controllers/upload.go**: Handles the upload, conversion, and download logic for WAV files. Uses `ffmpeg` to perform the WAV-to-FLAC conversion.
-- **static/index.html**: Provides the user interface for file upload, conversion, and download. Includes basic CSS and JavaScript for improved user experience.
-- **temp/**: Stores temporary files during conversion. This folder is cleared periodically.
+- **main.go**: Initializes the HTTP server, sets up the WebSocket endpoint, and serves static files.
+- **controllers/websocket.go**: Handles the WebSocket connection for real-time WAV-to-FLAC conversion using `ffmpeg`. The WAV data is streamed from the frontend, converted to FLAC in real-time, and streamed back.
+- **static/index.html**: Provides the user interface for starting/stopping audio streaming and playback. Includes JavaScript to manage the `MediaRecorder`, WebSocket communication, and buffered playback of converted audio.
+- **temp/**: Stores temporary files, if needed, during conversion.
 
 ## API Endpoints
 
 This project uses the following API endpoints:
 
-1. **POST /upload**:
-   - Description: Accepts a WAV file upload, converts it to FLAC, and returns a download link.
-   - Request: `multipart/form-data` with the `audio` field containing the WAV file.
-   - Response: JSON object with the `download_url` for the FLAC file.
-
-   Example Response:
-   ```json
-   {
-     "message": "Conversion successful",
-     "download_url": "/download/output_1234567890.flac"
-   }
-   ```
-
-2. **GET /download/{filename}**:
-   - Description: Allows the user to download the converted FLAC file by filename.
-   - Example: `GET /download/output_1234567890.flac`
-
-## Frontend UI
-
-The frontend UI is a single page with the following components:
-
-- **File Selection Button**: Styled to prompt users to upload their WAV files.
-- **Convert Button**: Triggers the file upload, conversion, and download process.
-- **Status Message**: Provides feedback on the conversion progress and any errors.
-
-### UI Styling
-
-The UI is styled with CSS for a clean, centered, and user-friendly experience. The file selection button and convert button are prominently displayed, with hover effects for improved interactivity.
+1. **GET /ws**:
+   - Description: WebSocket endpoint for real-time WAV-to-FLAC streaming.
+   - Usage: The frontend establishes a WebSocket connection with this endpoint, sending WAV audio data and receiving converted FLAC data.
 
 ## Troubleshooting
 
-1. **ffmpeg Not Found**:
+1. **`ffmpeg` Not Found**:
    - Ensure `ffmpeg` is installed and accessible from the command line.
    - Confirm `ffmpeg` is in your system PATH by running `ffmpeg -version`.
 
 2. **Port Already in Use**:
    - If port `8080` is occupied, modify the port in `main.go`:
      ```go
-     router.Run(":8080")  // Change to any available port
+     router.Run(":8081")  // Change to any available port
      ```
 
-3. **File Not Downloading**:
-   - Check the server logs for any `ffmpeg` errors.
-   - Ensure the `temp` directory has write permissions.
+3. **Incomplete Audio**:
+   - Ensure you’re using the updated frontend code, which captures and buffers all audio chunks before closing the connection.
+   - Verify that the `MediaRecorder` configuration in `index.html` uses `audio/webm; codecs=opus`, which is widely supported.
 
-4. **NotSupportedError**:
-   - This can occur if the browser does not support the audio format or the file type is incompatible. Ensure the WAV file is properly formatted and not corrupted.
+4. **Browser Compatibility**:
+   - This application requires a modern browser that supports `MediaRecorder` with `audio/webm` and Opus codecs. If using Safari, consider testing on Chrome or Firefox.
 
 ## Contributing
 
@@ -157,7 +120,7 @@ Contributions are welcome! Please fork the repository and create a pull request 
 
 ### Development Setup
 
-1. Clone the repo: `git clone https://github.com/Omkaarr1/streaming-wav-to-flac.git`
+1. Clone the repo: `git clone https://github.com/yourusername/wav-to-flac-conversion.git`
 2. Make your changes and test locally.
 3. Push your branch and create a pull request.
 
