@@ -2,6 +2,12 @@
 
 This project is a web-based application that allows users to stream live audio from their microphone in WAV format and receive a real-time conversion to FLAC. The server, built in Go, uses WebSockets to handle real-time audio streaming and `ffmpeg` for on-the-fly conversion. The client application is built with HTML, CSS, and JavaScript to support live streaming, buffering, and playback of converted FLAC data.
 
+Accessing the Application
+You can access the application through the following link:
+
+Real-Time WAV to FLAC Streaming Service [https://ec2-54-172-120-16.compute-1.amazonaws.com/static/]
+Note: Since this service uses a self-signed SSL certificate, your browser will likely warn you that the connection is not secure. To proceed, click on Advanced and choose Proceed to [hostname] (unsafe).
+
 ## Features
 
 - **Real-Time Audio Streaming**: Users can stream audio from their microphone in WAV format.
