@@ -25,6 +25,10 @@ func main() {
         controllers.HandleWebSocket(c.Writer, c.Request)
     })
 
+    router.GET("/", func(c *gin.Context){
+        c.File("./static/index.html")
+    })
+
     // Serve static files for frontend
     router.Static("/static", "./static")
 	router.Static("/download", "./temp")
