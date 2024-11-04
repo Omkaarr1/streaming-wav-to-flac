@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAV to FLAC Converter</title>
+    <style>
+        /* Basic Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Center the content */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f7fa;
+            color: #333;
+        }
+
+        /* Main container styling */
+        .container {
+            text-align: center;
+            background: #fff;
+            padding: 40px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        /* File input and label styling */
+        .file-input-wrapper {
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .file-label:hover {
+            background-color: #0056b3;
+        }
+
+        /* Hide default file input */
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* Convert button styling */
+        .convert-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #28a745;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .convert-btn:hover {
+            background-color: #218838;
+        }
+
+        /* Status message */
+        .status-message {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WAV to FLAC Converter</h1>
+        
+        <!-- File upload section -->
+        <div class="file-input-wrapper">
+            <label for="fileInput" class="file-label">Choose WAV File</label>
+            <input type="file" id="fileInput" class="file-input" accept=".wav" />
+        </div>
+
+        <!-- Convert button -->
+        <button id="convertBtn" class="convert-btn">Convert and Download</button>
+
+        <!-- Status message for feedback -->
+        <div class="status-message" id="statusMessage"></div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const convertBtn = document.getElementById('convertBtn');
+        const statusMessage = document.getElementById('statusMessage');
+
+        convertBtn.addEventListener('click', () => {
+            if (fileInput.files.length === 0) {
+                statusMessage.textContent = "Please select a WAV file to upload.";
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append("audio", file);
+
+            // Show a loading message
+            statusMessage.textContent = "Converting your file...";
+
+            // Send the WAV file to the server for conversion
+            fetch("http://localhost:8080/upload", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.download_url) {
+                    // Trigger download of the FLAC file
+                    const downloadLink = document.createElement("a");
+                    downloadLink.href = data.download_url;
+                    downloadLink.download = data.download_url.split("/").pop();
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+
+                    // Update status message
+                    statusMessage.textContent = "Conversion successful! Your download should start shortly.";
+                } else {
+                    statusMessage.textContent = "Conversion failed: " + data.error;
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                statusMessage.textContent = "An error occurred during file upload.";
+            });
+        });
+    </script>
+</body>
+</html>
