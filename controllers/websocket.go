@@ -31,7 +31,7 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
     }()
 
     // Start ffmpeg command to convert WAV to FLAC in real-time
-    ffmpegCmd := exec.Command("ffmpeg", "-f", "wav", "-i", "pipe:0", "-c:a", "flac", "-f", "flac", "pipe:1")
+    ffmpegCmd := exec.Command("ffmpeg", "-f", "webm", "-i", "pipe:0", "-c:a", "flac", "-f", "flac", "pipe:1")
     
     // Get stdin and stdout pipes
     ffmpegStdin, err := ffmpegCmd.StdinPipe()
